@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Deployment Vault
 
-## Getting Started
+A secure web application to store deployment-related information per company and project.
 
-First, run the development server:
+## Features
+
+- **Authentication** — Register/login with bcrypt-hashed passwords, JWT sessions
+- **Companies** — Create and manage company workspaces
+- **Projects** — Per-company projects with full CRUD
+- **Repositories** — Track repo URLs per project
+- **Deployment Environments** — Production / Staging / Development with encrypted secrets
+- **Backend Documentation** — Postman, Swagger, Apidog links per project
+- **Other Documents** — Links, notes, credentials, and documents with encryption for sensitive types
+- **AES-256-GCM encryption** — All sensitive values encrypted at rest
+- **Reveal/copy buttons** — Masked secrets with reveal and clipboard copy
+
+## Tech Stack
+
+Next.js 16 (App Router) · TypeScript · Tailwind CSS · shadcn/ui · TanStack Query · Prisma 7 · PostgreSQL · Zod · React Hook Form · bcryptjs · jose · Sonner
+
+## Setup
+
+### 1. Prerequisites
+
+- Node.js 18+
+- PostgreSQL database
+
+### 2. Environment variables
+
+Copy `.env.example` to `.env` and fill in:
+
+```bash
+cp .env.example .env
+```
+
+Generate the required secrets:
+
+```bash
+# JWT secret (base64, 32 bytes)
+openssl rand -base64 32
+
+# Encryption key (hex, must be exactly 64 hex chars = 32 bytes)
+openssl rand -hex 32
+```
+
+Set `DATABASE_URL` to your PostgreSQL connection string.
+
+### 3. Install dependencies
+
+```bash
+npm install
+```
+
+### 4. Database migration
+
+```bash
+npx prisma migrate dev --name init
+```
+
+### 5. Run development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) — you'll be redirected to `/login`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Security Notes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Passwords are hashed with bcryptjs (12 salt rounds)
+- Session tokens are signed JWTs via `jose` (HS256, 7-day expiry)
+- Sensitive deployment fields (credentials, env files, notes, tokens) are encrypted with AES-256-GCM before storage
+- All API routes verify ownership — users can only access their own data
+- `ENCRYPTION_KEY` and `JWT_SECRET` must never be committed or logged
 
-## Learn More
+## Folder Structure
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/
+  (auth)/login, register    — public auth pages
+  (dashboard)/              — protected dashboard routes
+  api/                      — route handlers
+components/
+  layout/                   — sidebar, topbar
+  companies/                — company UI
+  projects/                 — project UI
+  vault/                    — tab panels (repos, deployments, docs)
+hooks/                      — TanStack Query hooks
+lib/                        — db, auth, encryption, validation helpers
+prisma/                     — Prisma schema and migrations
+types/                      — shared TypeScript types
+```
