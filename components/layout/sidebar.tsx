@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddCompanyDialog } from "@/components/companies/add-company-dialog";
+import { VERSIONS } from "@/lib/versions";
 import { useState } from "react";
 
 async function fetchCompanies(): Promise<Company[]> {
@@ -116,6 +117,18 @@ export function Sidebar() {
           })}
         </div>
       </ScrollArea>
+
+      <div className="border-t border-border px-4 py-3">
+        <Link
+          href="/dashboard/changelog"
+          className="flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors group"
+        >
+          <span>Version</span>
+          <span className="font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full group-hover:bg-indigo-100 transition-colors">
+            v{VERSIONS[0].version}
+          </span>
+        </Link>
+      </div>
 
       <AddCompanyDialog open={addOpen} onOpenChange={setAddOpen} />
     </aside>
