@@ -25,11 +25,21 @@ interface Props {
   project?: Project;
 }
 
-export function AddProjectDialog({ open, onOpenChange, companyId, project }: Readonly<Props>) {
+export function AddProjectDialog({
+  open,
+  onOpenChange,
+  companyId,
+  project,
+}: Readonly<Props>) {
   const queryClient = useQueryClient();
   const isEdit = !!project;
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ProjectInput>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ProjectInput>({
     resolver: zodResolver(projectSchema),
     defaultValues: project
       ? { name: project.name, description: project.description ?? "" }
@@ -39,7 +49,7 @@ export function AddProjectDialog({ open, onOpenChange, companyId, project }: Rea
   const mutation = useMutation({
     mutationFn: async (data: ProjectInput) => {
       const url = isEdit
-        ? `/api/companies/${companyId}/projects/${project!.id}`
+        ? `/api/companies/${companyId}/projects/${project?.id}`
         : `/api/companies/${companyId}/projects`;
       const method = isEdit ? "PATCH" : "POST";
       const res = await fetch(url, {
@@ -62,41 +72,50 @@ export function AddProjectDialog({ open, onOpenChange, companyId, project }: Rea
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const idleLabel = isEdit ? "Save changes" : "Create project";
+  const submitLabel = mutation.isPending ? "Saving…" : idleLabel;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-slate-800 border-slate-700 text-white">
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit project" : "Add project"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
-          <div className="space-y-1">
-            <Label className="text-slate-300">Name *</Label>
-            <Input
-              className="bg-slate-700 border-slate-600 text-white"
-              placeholder="My Project"
-              {...register("name")}
-            />
-            {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
+        <form
+          onSubmit={handleSubmit((d) => mutation.mutate(d))}
+          className="space-y-4"
+        >
+          <div className="space-y-1.5">
+            <Label>Name *</Label>
+            <Input placeholder="My Project" {...register("name")} />
+            {errors.name && (
+              <p className="text-xs text-destructive">{errors.name.message}</p>
+            )}
           </div>
-          <div className="space-y-1">
-            <Label className="text-slate-300">Description</Label>
+          <div className="space-y-1.5">
+            <Label>Description</Label>
             <Textarea
-              className="bg-slate-700 border-slate-600 text-white resize-none"
-              placeholder="Brief description..."
+              className="resize-none"
+              placeholder="Brief description…"
               rows={3}
               {...register("description")}
             />
           </div>
           <DialogFooter>
-            <Button variant="ghost" type="button" onClick={() => onOpenChange(false)} className="text-slate-400">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="cursor-pointer"
+            >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
               disabled={mutation.isPending}
             >
-              {mutation.isPending ? "Saving…" : isEdit ? "Save changes" : "Create project"}
+              {submitLabel}
             </Button>
           </DialogFooter>
         </form>

@@ -13,12 +13,19 @@ interface Props {
   className?: string;
 }
 
-export function SecretField({ value, label, multiline = false, className }: Readonly<Props>) {
+export function SecretField({
+  value,
+  label,
+  multiline = false,
+  className,
+}: Readonly<Props>) {
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
 
   if (!value) {
-    return <span className="text-slate-500 text-sm italic">Not set</span>;
+    return (
+      <span className="text-muted-foreground text-sm italic">Not set</span>
+    );
   }
 
   async function handleCopy() {
@@ -34,8 +41,8 @@ export function SecretField({ value, label, multiline = false, className }: Read
         {multiline ? (
           <pre
             className={cn(
-              "text-xs font-mono rounded p-2 bg-slate-900 border border-slate-700 overflow-auto max-h-40",
-              revealed ? "text-slate-200" : "text-transparent select-none bg-clip-text"
+              "text-xs font-mono rounded-lg p-3 bg-slate-50 border border-border overflow-auto max-h-40 transition-all",
+              revealed ? "text-foreground" : "select-none",
             )}
             style={revealed ? {} : { filter: "blur(4px)" }}
           >
@@ -44,8 +51,8 @@ export function SecretField({ value, label, multiline = false, className }: Read
         ) : (
           <span
             className={cn(
-              "text-sm font-mono block truncate",
-              revealed ? "text-slate-200" : "text-transparent select-none"
+              "text-sm font-mono block truncate transition-all",
+              revealed ? "text-foreground" : "select-none",
             )}
             style={revealed ? {} : { filter: "blur(4px)" }}
           >
@@ -53,24 +60,32 @@ export function SecretField({ value, label, multiline = false, className }: Read
           </span>
         )}
       </div>
-      <div className="flex gap-1 flex-shrink-0">
+      <div className="flex gap-1 shrink-0">
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-slate-400 hover:text-white"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
           onClick={() => setRevealed(!revealed)}
           title={revealed ? "Hide" : "Reveal"}
         >
-          {revealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          {revealed ? (
+            <EyeOff className="w-3.5 h-3.5" />
+          ) : (
+            <Eye className="w-3.5 h-3.5" />
+          )}
         </Button>
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-slate-400 hover:text-white"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
           onClick={handleCopy}
           title="Copy"
         >
-          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+          {copied ? (
+            <Check className="w-3.5 h-3.5 text-emerald-600" />
+          ) : (
+            <Copy className="w-3.5 h-3.5" />
+          )}
         </Button>
       </div>
     </div>

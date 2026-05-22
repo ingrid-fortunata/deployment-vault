@@ -35,29 +35,31 @@ export function Topbar({ userName, userEmail }: Readonly<TopbarProps>) {
     .slice(0, 2);
 
   return (
-    <header className="h-14 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur flex items-center justify-end px-6">
+    <header className="h-14 border-b border-border bg-white flex items-center justify-end px-6 shrink-0">
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md px-3 py-2 text-sm transition-colors outline-none">
+        <DropdownMenuTrigger className="flex items-center gap-2.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg px-3 py-1.5 text-sm transition-colors outline-none cursor-pointer">
           <Avatar className="w-7 h-7">
-            <AvatarFallback className="bg-indigo-600 text-white text-xs">
+            <AvatarFallback className="bg-indigo-600 text-white text-xs font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
-          <span>{userName}</span>
+          <span className="font-medium">{userName}</span>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48 bg-slate-800 border-slate-700">
-          <div className="px-3 py-2">
-            <p className="text-sm font-medium text-white">{userName}</p>
-            <p className="text-xs text-slate-400 truncate">{userEmail}</p>
+        <DropdownMenuContent align="end" className="w-52">
+          <div className="px-3 py-2.5">
+            <p className="text-sm font-semibold text-foreground">{userName}</p>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
+              {userEmail}
+            </p>
           </div>
-          <DropdownMenuSeparator className="bg-slate-700" />
-          <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700 cursor-pointer">
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="cursor-pointer">
             <User className="w-4 h-4 mr-2" />
             Profile
           </DropdownMenuItem>
-          <DropdownMenuSeparator className="bg-slate-700" />
+          <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-red-400 hover:text-red-300 hover:bg-slate-700 cursor-pointer"
+            className="text-destructive focus:text-destructive cursor-pointer"
             onClick={handleLogout}
           >
             <LogOut className="w-4 h-4 mr-2" />

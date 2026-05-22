@@ -24,20 +24,33 @@ interface Props {
   company?: Company;
 }
 
-export function AddCompanyDialog({ open, onOpenChange, company }: Readonly<Props>) {
+export function AddCompanyDialog({
+  open,
+  onOpenChange,
+  company,
+}: Readonly<Props>) {
   const queryClient = useQueryClient();
   const isEdit = !!company;
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<CompanyInput>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CompanyInput>({
     resolver: zodResolver(companySchema),
     defaultValues: company
-      ? { name: company.name, description: company.description ?? "", website: company.website ?? "" }
+      ? {
+          name: company.name,
+          description: company.description ?? "",
+          website: company.website ?? "",
+        }
       : {},
   });
 
   const mutation = useMutation({
     mutationFn: async (data: CompanyInput) => {
-      const url = isEdit ? `/api/companies/${company!.id}` : "/api/companies";
+      const url = isEdit ? `/api/companies/${company?.id}` : "/api/companies";
       const method = isEdit ? "PATCH" : "POST";
       const res = await fetch(url, {
         method,
@@ -59,50 +72,59 @@ export function AddCompanyDialog({ open, onOpenChange, company }: Readonly<Props
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const idleLabel = isEdit ? "Save changes" : "Create company";
+  const submitLabel = mutation.isPending ? "Saving…" : idleLabel;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-slate-800 border-slate-700 text-white">
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit company" : "Add company"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
-          <div className="space-y-1">
-            <Label className="text-slate-300">Name *</Label>
-            <Input
-              className="bg-slate-700 border-slate-600 text-white"
-              placeholder="Acme Corp"
-              {...register("name")}
-            />
-            {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
+        <form
+          onSubmit={handleSubmit((d) => mutation.mutate(d))}
+          className="space-y-4"
+        >
+          <div className="space-y-1.5">
+            <Label>Name *</Label>
+            <Input placeholder="Acme Corp" {...register("name")} />
+            {errors.name && (
+              <p className="text-xs text-destructive">{errors.name.message}</p>
+            )}
           </div>
-          <div className="space-y-1">
-            <Label className="text-slate-300">Description</Label>
+          <div className="space-y-1.5">
+            <Label>Description</Label>
             <Textarea
-              className="bg-slate-700 border-slate-600 text-white resize-none"
-              placeholder="Brief description..."
+              className="resize-none"
+              placeholder="Brief description…"
               rows={3}
               {...register("description")}
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-slate-300">Website</Label>
-            <Input
-              className="bg-slate-700 border-slate-600 text-white"
-              placeholder="https://acme.com"
-              {...register("website")}
-            />
-            {errors.website && <p className="text-xs text-red-400">{errors.website.message}</p>}
+          <div className="space-y-1.5">
+            <Label>Website</Label>
+            <Input placeholder="https://acme.com" {...register("website")} />
+            {errors.website && (
+              <p className="text-xs text-destructive">
+                {errors.website.message}
+              </p>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="ghost" type="button" onClick={() => onOpenChange(false)} className="text-slate-400">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="cursor-pointer"
+            >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
               disabled={mutation.isPending}
             >
-              {mutation.isPending ? "Saving…" : isEdit ? "Save changes" : "Create company"}
+              {submitLabel}
             </Button>
           </DialogFooter>
         </form>

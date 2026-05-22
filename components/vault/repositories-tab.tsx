@@ -14,12 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CopyButton } from "./copy-button";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 
 interface Props {
   projectId: string;
@@ -43,9 +44,16 @@ export function RepositoriesTab({ projectId }: Readonly<Props>) {
     queryFn: () => fetchRepos(projectId),
   });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<RepositoryInput>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<RepositoryInput>({
     resolver: zodResolver(repositorySchema),
-    values: editing ? { title: editing.title, url: editing.url } : { title: "", url: "" },
+    values: editing
+      ? { title: editing.title, url: editing.url }
+      : { title: "", url: "" },
   });
 
   const saveMutation = useMutation({
@@ -72,7 +80,9 @@ export function RepositoriesTab({ projectId }: Readonly<Props>) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/projects/${projectId}/repositories/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/projects/${projectId}/repositories/${id}`, {
+        method: "DELETE",
+      });
       if (!res.ok && res.status !== 204) throw new Error("Failed to delete");
     },
     onSuccess: () => {
@@ -83,42 +93,86 @@ export function RepositoriesTab({ projectId }: Readonly<Props>) {
     onError: () => toast.error("Failed to delete"),
   });
 
-  function openAdd() { setEditing(null); reset({ title: "", url: "" }); setFormOpen(true); }
-  function openEdit(r: Repository) { setEditing(r); setFormOpen(true); }
+  function openAdd() {
+    setEditing(null);
+    reset({ title: "", url: "" });
+    setFormOpen(true);
+  }
+  function openEdit(r: Repository) {
+    setEditing(r);
+    setFormOpen(true);
+  }
+
+  const idleLabel = editing ? "Save changes" : "Add";
+  const submitLabel = saveMutation.isPending ? "Saving…" : idleLabel;
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" onClick={openAdd}>
-          <Plus className="w-4 h-4 mr-1" /> Add repository
+        <Button
+          size="sm"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm cursor-pointer"
+          onClick={openAdd}
+        >
+          <Plus className="w-4 h-4 mr-1.5" /> Add repository
         </Button>
       </div>
 
-      {isLoading && <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-16 bg-slate-800" />)}</div>}
+      {isLoading && (
+        <div className="space-y-2">
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-16 bg-muted" />
+          ))}
+        </div>
+      )}
 
       {!isLoading && repos?.length === 0 && (
-        <div className="text-center py-12 text-slate-400">
-          <GitBranch className="w-10 h-10 mx-auto mb-3 text-slate-600" />
-          <p>No repositories yet.</p>
+        <div className="text-center py-14">
+          <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+            <GitBranch className="w-6 h-6 text-muted-foreground" />
+          </div>
+          <p className="text-sm text-muted-foreground">No repositories yet.</p>
         </div>
       )}
 
       <div className="space-y-2">
         {repos?.map((repo) => (
-          <div key={repo.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-800 border border-slate-700">
-            <GitBranch className="w-4 h-4 text-blue-400 flex-shrink-0" />
+          <div
+            key={repo.id}
+            className="flex items-center gap-3 p-3.5 rounded-xl bg-white border border-border shadow-sm"
+          >
+            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+              <GitBranch className="w-4 h-4 text-blue-600" />
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white">{repo.title}</p>
-              <a href={repo.url} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 truncate flex items-center gap-1">
-                {repo.url} <ExternalLink className="w-3 h-3" />
+              <p className="text-sm font-medium text-foreground">
+                {repo.title}
+              </p>
+              <a
+                href={repo.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-indigo-600 hover:text-indigo-700 truncate flex items-center gap-1"
+              >
+                {repo.url} <ExternalLink className="w-3 h-3 shrink-0" />
               </a>
             </div>
             <div className="flex gap-1">
               <CopyButton value={repo.url} label="Repository URL" />
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-white" onClick={() => openEdit(repo)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                onClick={() => openEdit(repo)}
+              >
                 <Pencil className="w-3.5 h-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-300" onClick={() => setDeleting(repo)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                onClick={() => setDeleting(repo)}
+              >
                 <Trash2 className="w-3.5 h-3.5" />
               </Button>
             </div>
@@ -126,52 +180,66 @@ export function RepositoriesTab({ projectId }: Readonly<Props>) {
         ))}
       </div>
 
-      {/* Add/Edit dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="bg-slate-800 border-slate-700 text-white">
+        <DialogContent showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit repository" : "Add repository"}</DialogTitle>
+            <DialogTitle>
+              {editing ? "Edit repository" : "Add repository"}
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(d => saveMutation.mutate(d))} className="space-y-4">
-            <div className="space-y-1">
-              <Label className="text-slate-300">Title *</Label>
-              <Input className="bg-slate-700 border-slate-600 text-white" placeholder="Frontend" {...register("title")} />
-              {errors.title && <p className="text-xs text-red-400">{errors.title.message}</p>}
+          <form
+            onSubmit={handleSubmit((d) => saveMutation.mutate(d))}
+            className="space-y-4"
+          >
+            <div className="space-y-1.5">
+              <Label>Title *</Label>
+              <Input placeholder="Frontend" {...register("title")} />
+              {errors.title && (
+                <p className="text-xs text-destructive">
+                  {errors.title.message}
+                </p>
+              )}
             </div>
-            <div className="space-y-1">
-              <Label className="text-slate-300">URL *</Label>
-              <Input className="bg-slate-700 border-slate-600 text-white" placeholder="https://github.com/..." {...register("url")} />
-              {errors.url && <p className="text-xs text-red-400">{errors.url.message}</p>}
+            <div className="space-y-1.5">
+              <Label>URL *</Label>
+              <Input
+                placeholder="https://github.com/..."
+                {...register("url")}
+              />
+              {errors.url && (
+                <p className="text-xs text-destructive">{errors.url.message}</p>
+              )}
             </div>
             <DialogFooter>
-              <Button variant="ghost" type="button" onClick={() => setFormOpen(false)} className="text-slate-400">Cancel</Button>
-              <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? "Saving…" : editing ? "Save changes" : "Add"}
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => setFormOpen(false)}
+                className="cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
+                disabled={saveMutation.isPending}
+              >
+                {submitLabel}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Delete dialog */}
-      {deleting && (
-        <AlertDialog open={!!deleting} onOpenChange={() => setDeleting(null)}>
-          <AlertDialogContent className="bg-slate-800 border-slate-700 text-white">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete repository?</AlertDialogTitle>
-              <AlertDialogDescription className="text-slate-400">
-                Delete <strong className="text-white">{deleting.title}</strong>? This cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white">Cancel</AlertDialogCancel>
-              <Button variant="destructive" onClick={() => deleteMutation.mutate(deleting.id)} disabled={deleteMutation.isPending}>
-                {deleteMutation.isPending ? "Deleting…" : "Delete"}
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
+      <ConfirmDeleteDialog
+        open={!!deleting}
+        onOpenChange={(open) => { if (!open) setDeleting(null); }}
+        title="Delete repository?"
+        description={<>Delete <strong>{deleting?.title}</strong>? This cannot be undone.</>}
+        onConfirm={() => deleteMutation.mutate(deleting!.id)}
+        isPending={deleteMutation.isPending}
+        confirmLabel="Delete repository"
+      />
     </div>
   );
 }

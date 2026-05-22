@@ -28,24 +28,27 @@ export function Sidebar() {
   });
 
   return (
-    <aside className="flex flex-col w-64 min-h-screen bg-slate-900 border-r border-slate-700/50">
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-700/50">
-        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
+    <aside className="flex flex-col w-64 min-h-screen bg-white border-r border-border">
+      {/* Logo */}
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-border">
+        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
           <Lock className="w-4 h-4 text-white" />
         </div>
-        <span className="font-semibold text-white text-sm">Deployment Vault</span>
+        <span className="font-semibold text-foreground text-sm tracking-tight">
+          Deployment Vault
+        </span>
       </div>
 
       <ScrollArea className="flex-1 py-4">
         <div className="px-3">
           <div className="flex items-center justify-between px-2 mb-2">
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Companies
             </span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 text-slate-400 hover:text-white hover:bg-slate-700"
+              className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
               onClick={() => setAddOpen(true)}
             >
               <Plus className="w-3.5 h-3.5" />
@@ -55,19 +58,23 @@ export function Sidebar() {
           {isLoading && (
             <div className="space-y-1 px-2">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-8 w-full bg-slate-700" />
+                <Skeleton key={i} className="h-8 w-full bg-muted" />
               ))}
             </div>
           )}
 
           {!isLoading && companies?.length === 0 && (
-            <div className="px-2 py-4 text-center">
-              <Building2 className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-              <p className="text-xs text-slate-500">No companies yet</p>
+            <div className="px-2 py-6 text-center">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center mx-auto mb-3">
+                <Building2 className="w-5 h-5 text-indigo-400" />
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">
+                No companies yet
+              </p>
               <Button
                 variant="ghost"
                 size="sm"
-                className="mt-2 text-indigo-400 hover:text-indigo-300 text-xs h-7"
+                className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 text-xs h-7 cursor-pointer"
                 onClick={() => setAddOpen(true)}
               >
                 Add your first company
@@ -83,15 +90,27 @@ export function Sidebar() {
                 key={company.id}
                 href={href}
                 className={cn(
-                  "flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-colors group",
+                  "flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors group",
                   isActive
-                    ? "bg-indigo-600/20 text-indigo-300"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800"
+                    ? "bg-indigo-50 text-indigo-700 font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
                 )}
               >
-                <Building2 className="w-4 h-4 flex-shrink-0" />
+                <Building2
+                  className={cn(
+                    "w-4 h-4 shrink-0",
+                    isActive ? "text-indigo-600" : "",
+                  )}
+                />
                 <span className="flex-1 truncate">{company.name}</span>
-                <ChevronRight className={cn("w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity", isActive && "opacity-100")} />
+                <ChevronRight
+                  className={cn(
+                    "w-3.5 h-3.5 transition-opacity",
+                    isActive
+                      ? "opacity-60"
+                      : "opacity-0 group-hover:opacity-40",
+                  )}
+                />
               </Link>
             );
           })}

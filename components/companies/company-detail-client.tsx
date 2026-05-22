@@ -35,24 +35,28 @@ export function CompanyDetailClient({ company }: Readonly<Props>) {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-600/30 flex items-center justify-center">
-            <Building2 className="w-6 h-6 text-indigo-400" />
+          <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+            <Building2 className="w-6 h-6 text-indigo-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">{company.name}</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+              {company.name}
+            </h1>
             {company.description && (
-              <p className="text-slate-400 text-sm mt-0.5">{company.description}</p>
+              <p className="text-muted-foreground text-sm mt-0.5">
+                {company.description}
+              </p>
             )}
             {company.website && (
               <a
                 href={company.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 mt-1"
+                className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 mt-1"
               >
                 <Globe className="w-3 h-3" />
                 {company.website}
@@ -65,18 +69,18 @@ export function CompanyDetailClient({ company }: Readonly<Props>) {
             variant="outline"
             size="sm"
             onClick={() => setEditOpen(true)}
-            className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            className="cursor-pointer"
           >
-            <Pencil className="w-4 h-4 mr-1" />
+            <Pencil className="w-4 h-4 mr-1.5" />
             Edit
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setDeleteOpen(true)}
-            className="border-red-800 text-red-400 hover:bg-red-900/20"
+            className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 cursor-pointer"
           >
-            <Trash2 className="w-4 h-4 mr-1" />
+            <Trash2 className="w-4 h-4 mr-1.5" />
             Delete
           </Button>
         </div>
@@ -86,9 +90,14 @@ export function CompanyDetailClient({ company }: Readonly<Props>) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-white">Projects</h2>
+            <h2 className="text-base font-semibold text-foreground">
+              Projects
+            </h2>
             {projects && (
-              <Badge variant="secondary" className="bg-slate-700 text-slate-300">
+              <Badge
+                variant="secondary"
+                className="bg-muted text-muted-foreground text-xs"
+              >
                 {projects.length}
               </Badge>
             )}
@@ -96,9 +105,9 @@ export function CompanyDetailClient({ company }: Readonly<Props>) {
           <Button
             size="sm"
             onClick={() => setAddProjectOpen(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm cursor-pointer"
           >
-            <Plus className="w-4 h-4 mr-1" />
+            <Plus className="w-4 h-4 mr-1.5" />
             Add project
           </Button>
         </div>
@@ -106,21 +115,27 @@ export function CompanyDetailClient({ company }: Readonly<Props>) {
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-32 bg-slate-800" />
+              <Skeleton key={i} className="h-32 bg-muted" />
             ))}
           </div>
         )}
 
         {!isLoading && projects?.length === 0 && (
-          <Card className="bg-slate-800 border-slate-700">
-            <CardContent className="py-12 text-center">
-              <p className="text-slate-400">No projects yet.</p>
+          <Card className="bg-white border-border shadow-sm">
+            <CardContent className="py-14 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                <Building2 className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                No projects yet.
+              </p>
               <Button
-                variant="ghost"
-                className="mt-3 text-indigo-400 hover:text-indigo-300"
+                variant="outline"
+                size="sm"
                 onClick={() => setAddProjectOpen(true)}
+                className="cursor-pointer"
               >
-                <Plus className="w-4 h-4 mr-1" />
+                <Plus className="w-4 h-4 mr-1.5" />
                 Add your first project
               </Button>
             </CardContent>
@@ -140,8 +155,16 @@ export function CompanyDetailClient({ company }: Readonly<Props>) {
         )}
       </div>
 
-      <AddCompanyDialog open={editOpen} onOpenChange={setEditOpen} company={company} />
-      <DeleteCompanyDialog open={deleteOpen} onOpenChange={setDeleteOpen} company={company} />
+      <AddCompanyDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        company={company}
+      />
+      <DeleteCompanyDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        company={company}
+      />
       <AddProjectDialog
         open={addProjectOpen}
         onOpenChange={setAddProjectOpen}

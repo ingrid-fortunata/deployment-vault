@@ -6,29 +6,44 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Server, Pencil, Trash2, ExternalLink } from "lucide-react";
-import { deploymentEnvironmentSchema, type DeploymentEnvironmentInput } from "@/lib/validations";
+import {
+  deploymentEnvironmentSchema,
+  type DeploymentEnvironmentInput,
+} from "@/lib/validations";
 import type { DeploymentEnvironment } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { SecretField } from "./secret-field";
 import { CopyButton } from "./copy-button";
 import { EnvBadge } from "./env-badge";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 
-interface Props { projectId: string; companyId: string; }
+interface Props {
+  projectId: string;
+  companyId: string;
+}
 
-async function fetchDeployments(projectId: string): Promise<DeploymentEnvironment[]> {
+async function fetchDeployments(
+  projectId: string,
+): Promise<DeploymentEnvironment[]> {
   const res = await fetch(`/api/projects/${projectId}/deployments`);
   if (!res.ok) throw new Error("Failed");
   return (await res.json()).data;
@@ -47,22 +62,41 @@ export function DeploymentTab({ projectId }: Readonly<Props>) {
     queryFn: () => fetchDeployments(projectId),
   });
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<DeploymentEnvironmentInput>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<DeploymentEnvironmentInput>({
     resolver: zodResolver(deploymentEnvironmentSchema),
-    defaultValues: { environment: "production", deploymentUrl: "", credentials: "", envFileContent: "", notes: "" },
+    defaultValues: {
+      environment: "production",
+      deploymentUrl: "",
+      credentials: "",
+      envFileContent: "",
+      notes: "",
+    },
   });
 
   const envValue = watch("environment");
 
   function openAdd() {
     setEditing(null);
-    reset({ environment: "production", deploymentUrl: "", credentials: "", envFileContent: "", notes: "" });
+    reset({
+      environment: "production",
+      deploymentUrl: "",
+      credentials: "",
+      envFileContent: "",
+      notes: "",
+    });
     setFormOpen(true);
   }
   function openEdit(d: DeploymentEnvironment) {
     setEditing(d);
     reset({
-      environment: d.environment as "production" | "staging" | "development",
+      environment: d.environment,
       deploymentUrl: d.deploymentUrl ?? "",
       credentials: d.credentials ?? "",
       envFileContent: d.envFileContent ?? "",
@@ -94,7 +128,9 @@ export function DeploymentTab({ projectId }: Readonly<Props>) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/projects/${projectId}/deployments/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/projects/${projectId}/deployments/${id}`, {
+        method: "DELETE",
+      });
       if (!res.ok && res.status !== 204) throw new Error("Failed");
     },
     onSuccess: () => {
@@ -105,143 +141,261 @@ export function DeploymentTab({ projectId }: Readonly<Props>) {
     onError: () => toast.error("Failed to delete"),
   });
 
+  const idleLabel = editing ? "Save changes" : "Add";
+  const submitLabel = saveMutation.isPending ? "Saving…" : idleLabel;
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" onClick={openAdd}>
-          <Plus className="w-4 h-4 mr-1" /> Add environment
+        <Button
+          size="sm"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm cursor-pointer"
+          onClick={openAdd}
+        >
+          <Plus className="w-4 h-4 mr-1.5" /> Add environment
         </Button>
       </div>
 
-      {isLoading && <div className="space-y-3">{[1, 2].map(i => <Skeleton key={i} className="h-32 bg-slate-800" />)}</div>}
+      {isLoading && (
+        <div className="space-y-3">
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-32 bg-muted" />
+          ))}
+        </div>
+      )}
 
       {!isLoading && deployments?.length === 0 && (
-        <div className="text-center py-12 text-slate-400">
-          <Server className="w-10 h-10 mx-auto mb-3 text-slate-600" />
-          <p>No deployment environments yet.</p>
+        <div className="text-center py-14">
+          <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+            <Server className="w-6 h-6 text-muted-foreground" />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            No deployment environments yet.
+          </p>
         </div>
       )}
 
       <div className="space-y-4">
         {deployments?.map((dep) => (
-          <div key={dep.id} className="rounded-lg bg-slate-800 border border-slate-700 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+          <div
+            key={dep.id}
+            className="rounded-xl bg-white border border-border shadow-sm overflow-hidden"
+          >
+            {/* Header row */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
               <div className="flex items-center gap-3">
                 <EnvBadge environment={dep.environment} />
                 {dep.deploymentUrl && (
-                  <a href={dep.deploymentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                    {dep.deploymentUrl} <ExternalLink className="w-3 h-3" />
+                  <a
+                    href={dep.deploymentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                  >
+                    {dep.deploymentUrl}{" "}
+                    <ExternalLink className="w-3 h-3 shrink-0" />
                   </a>
                 )}
               </div>
               <div className="flex gap-1">
-                {dep.deploymentUrl && <CopyButton value={dep.deploymentUrl} label="URL" />}
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-white" onClick={() => openEdit(dep)}>
+                {dep.deploymentUrl && (
+                  <CopyButton value={dep.deploymentUrl} label="URL" />
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                  onClick={() => openEdit(dep)}
+                >
                   <Pencil className="w-3.5 h-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-300" onClick={() => setDeleting(dep)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                  onClick={() => setDeleting(dep)}
+                >
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </div>
             </div>
+
+            {/* Body */}
             <div className="p-4 space-y-4">
               {dep.credentials && (
                 <div>
-                  <p className="text-xs text-slate-500 mb-1 font-medium uppercase tracking-wider">Credentials</p>
-                  <SecretField value={dep.credentials} label="Credentials" multiline />
+                  <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">
+                    Credentials
+                  </p>
+                  <SecretField
+                    value={dep.credentials}
+                    label="Credentials"
+                    multiline
+                  />
                 </div>
               )}
               {dep.envFileContent && (
                 <>
-                  {dep.credentials && <Separator className="bg-slate-700" />}
+                  {dep.credentials && <Separator />}
                   <div>
-                    <p className="text-xs text-slate-500 mb-1 font-medium uppercase tracking-wider">.env file</p>
-                    <SecretField value={dep.envFileContent} label="Env file" multiline />
+                    <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">
+                      .env file
+                    </p>
+                    <SecretField
+                      value={dep.envFileContent}
+                      label="Env file"
+                      multiline
+                    />
                   </div>
                 </>
               )}
               {dep.notes && (
                 <>
-                  {(dep.credentials || dep.envFileContent) && <Separator className="bg-slate-700" />}
+                  {(dep.credentials || dep.envFileContent) && <Separator />}
                   <div>
-                    <p className="text-xs text-slate-500 mb-1 font-medium uppercase tracking-wider">Notes</p>
+                    <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">
+                      Notes
+                    </p>
                     <SecretField value={dep.notes} label="Notes" multiline />
                   </div>
                 </>
               )}
               {!dep.credentials && !dep.envFileContent && !dep.notes && (
-                <p className="text-sm text-slate-500 italic">No details stored.</p>
+                <p className="text-sm text-muted-foreground italic">
+                  No details stored.
+                </p>
               )}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Add/Edit dialog */}
+      {/* Add / Edit dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-lg">
+        <DialogContent className="sm:max-w-2xl" showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit environment" : "Add environment"}</DialogTitle>
+            <DialogTitle>
+              {editing ? "Edit environment" : "Add environment"}
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(d => saveMutation.mutate(d))} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-            <div className="space-y-1">
-              <Label className="text-slate-300">Environment *</Label>
-              <Select value={envValue} onValueChange={(v) => setValue("environment", v as "production" | "staging" | "development")}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+          <form
+            onSubmit={handleSubmit((d) => saveMutation.mutate(d))}
+            className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
+          >
+            <div className="space-y-1.5">
+              <Label>Environment *</Label>
+              <Select
+                value={envValue}
+                onValueChange={(v) =>
+                  setValue(
+                    "environment",
+                    v as "production" | "staging" | "development",
+                  )
+                }
+              >
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
-                  {ENV_OPTIONS.map(e => (
-                    <SelectItem key={e} value={e} className="text-white capitalize">{e}</SelectItem>
+                <SelectContent>
+                  {ENV_OPTIONS.map((e) => (
+                    <SelectItem key={e} value={e} className="capitalize">
+                      {e}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.environment && <p className="text-xs text-red-400">{errors.environment.message}</p>}
+              {errors.environment && (
+                <p className="text-xs text-destructive">
+                  {errors.environment.message}
+                </p>
+              )}
             </div>
-            <div className="space-y-1">
-              <Label className="text-slate-300">Deployment URL</Label>
-              <Input className="bg-slate-700 border-slate-600 text-white" placeholder="https://app.example.com" {...register("deploymentUrl")} />
+            <div className="space-y-1.5">
+              <Label>Deployment URL</Label>
+              <Input
+                placeholder="https://app.example.com"
+                {...register("deploymentUrl")}
+              />
             </div>
-            <div className="space-y-1">
-              <Label className="text-slate-300">Credentials <span className="text-xs text-amber-400">(encrypted)</span></Label>
-              <Textarea className="bg-slate-700 border-slate-600 text-white font-mono text-xs resize-none" rows={4} placeholder="Login: admin@example.com&#10;Password: secret123&#10;Admin URL: /admin" {...register("credentials")} />
+            <div className="space-y-1.5">
+              <Label>
+                Credentials{" "}
+                <span className="text-xs text-amber-600 font-normal">
+                  (encrypted)
+                </span>
+              </Label>
+              <Textarea
+                className="font-mono text-xs resize-none"
+                rows={4}
+                placeholder={
+                  "Login: admin@example.com\nPassword: secret123\nAdmin URL: /admin"
+                }
+                {...register("credentials")}
+              />
             </div>
-            <div className="space-y-1">
-              <Label className="text-slate-300">.env file content <span className="text-xs text-amber-400">(encrypted)</span></Label>
-              <Textarea className="bg-slate-700 border-slate-600 text-white font-mono text-xs resize-none" rows={5} placeholder="DATABASE_URL=...&#10;SECRET_KEY=..." {...register("envFileContent")} />
+            <div className="space-y-1.5">
+              <Label>
+                .env file content{" "}
+                <span className="text-xs text-amber-600 font-normal">
+                  (encrypted)
+                </span>
+              </Label>
+              <Textarea
+                className="font-mono text-xs resize-none"
+                rows={5}
+                placeholder={"DATABASE_URL=...\nSECRET_KEY=..."}
+                {...register("envFileContent")}
+              />
             </div>
-            <div className="space-y-1">
-              <Label className="text-slate-300">Notes <span className="text-xs text-amber-400">(encrypted)</span></Label>
-              <Textarea className="bg-slate-700 border-slate-600 text-white resize-none" rows={3} placeholder="Additional deployment notes..." {...register("notes")} />
+            <div className="space-y-1.5">
+              <Label>
+                Notes{" "}
+                <span className="text-xs text-amber-600 font-normal">
+                  (encrypted)
+                </span>
+              </Label>
+              <Textarea
+                className="resize-none"
+                rows={3}
+                placeholder="Additional deployment notes…"
+                {...register("notes")}
+              />
             </div>
             <DialogFooter>
-              <Button variant="ghost" type="button" onClick={() => setFormOpen(false)} className="text-slate-400">Cancel</Button>
-              <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? "Saving…" : editing ? "Save changes" : "Add"}
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => setFormOpen(false)}
+                className="cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
+                disabled={saveMutation.isPending}
+              >
+                {submitLabel}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {deleting && (
-        <AlertDialog open={!!deleting} onOpenChange={() => setDeleting(null)}>
-          <AlertDialogContent className="bg-slate-800 border-slate-700 text-white">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete environment?</AlertDialogTitle>
-              <AlertDialogDescription className="text-slate-400">
-                Delete <strong className="text-white capitalize">{deleting.environment}</strong> environment? All sensitive data will be lost.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white">Cancel</AlertDialogCancel>
-              <Button variant="destructive" onClick={() => deleteMutation.mutate(deleting.id)} disabled={deleteMutation.isPending}>
-                {deleteMutation.isPending ? "Deleting…" : "Delete"}
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
+      <ConfirmDeleteDialog
+        open={!!deleting}
+        onOpenChange={(open) => { if (!open) setDeleting(null); }}
+        title="Delete environment?"
+        description={
+          <>
+            Delete <strong className="capitalize">{deleting?.environment}</strong> environment?
+            All sensitive data will be lost.
+          </>
+        }
+        onConfirm={() => deleteMutation.mutate(deleting!.id)}
+        isPending={deleteMutation.isPending}
+        confirmLabel="Delete environment"
+      />
     </div>
   );
 }

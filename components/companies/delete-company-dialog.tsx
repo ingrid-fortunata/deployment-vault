@@ -4,16 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Company } from "@/types";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 
 interface Props {
   open: boolean;
@@ -40,27 +31,19 @@ export function DeleteCompanyDialog({ open, onOpenChange, company }: Readonly<Pr
   });
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="bg-slate-800 border-slate-700 text-white">
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete company?</AlertDialogTitle>
-          <AlertDialogDescription className="text-slate-400">
-            This will permanently delete <strong className="text-white">{company.name}</strong> and all its projects, repositories, deployments, and documents. This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
-            Cancel
-          </AlertDialogCancel>
-          <Button
-            variant="destructive"
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? "Deleting…" : "Delete company"}
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDeleteDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Delete company?"
+      description={
+        <>
+          This will permanently delete <strong>{company.name}</strong> and all its projects,
+          repositories, deployments, and documents. This action cannot be undone.
+        </>
+      }
+      onConfirm={() => mutation.mutate()}
+      isPending={mutation.isPending}
+      confirmLabel="Delete company"
+    />
   );
 }

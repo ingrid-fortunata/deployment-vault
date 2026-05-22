@@ -6,7 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, BookOpen, Pencil, Trash2, ExternalLink } from "lucide-react";
-import { backendDocumentationSchema, type BackendDocumentationInput } from "@/lib/validations";
+import {
+  backendDocumentationSchema,
+  type BackendDocumentationInput,
+} from "@/lib/validations";
 import type { BackendDocumentation } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,14 +18,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CopyButton } from "./copy-button";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
 
-interface Props { projectId: string; companyId: string; }
+interface Props {
+  projectId: string;
+  companyId: string;
+}
 
 async function fetchDocs(projectId: string): Promise<BackendDocumentation[]> {
   const res = await fetch(`/api/projects/${projectId}/backend-docs`);
@@ -41,13 +48,31 @@ export function BackendDocsTab({ projectId }: Readonly<Props>) {
     queryFn: () => fetchDocs(projectId),
   });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<BackendDocumentationInput>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<BackendDocumentationInput>({
     resolver: zodResolver(backendDocumentationSchema),
-    values: editing ? { title: editing.title, url: editing.url, description: editing.description ?? "" } : { title: "", url: "", description: "" },
+    values: editing
+      ? {
+          title: editing.title,
+          url: editing.url,
+          description: editing.description ?? "",
+        }
+      : { title: "", url: "", description: "" },
   });
 
-  function openAdd() { setEditing(null); reset({ title: "", url: "", description: "" }); setFormOpen(true); }
-  function openEdit(d: BackendDocumentation) { setEditing(d); setFormOpen(true); }
+  function openAdd() {
+    setEditing(null);
+    reset({ title: "", url: "", description: "" });
+    setFormOpen(true);
+  }
+  function openEdit(d: BackendDocumentation) {
+    setEditing(d);
+    setFormOpen(true);
+  }
 
   const saveMutation = useMutation({
     mutationFn: async (data: BackendDocumentationInput) => {
@@ -72,7 +97,9 @@ export function BackendDocsTab({ projectId }: Readonly<Props>) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/projects/${projectId}/backend-docs/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/projects/${projectId}/backend-docs/${id}`, {
+        method: "DELETE",
+      });
       if (!res.ok && res.status !== 204) throw new Error("Failed");
     },
     onSuccess: () => {
@@ -83,40 +110,81 @@ export function BackendDocsTab({ projectId }: Readonly<Props>) {
     onError: () => toast.error("Failed to delete"),
   });
 
+  const idleLabel = editing ? "Save changes" : "Add";
+  const submitLabel = saveMutation.isPending ? "Saving…" : idleLabel;
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" onClick={openAdd}>
-          <Plus className="w-4 h-4 mr-1" /> Add documentation
+        <Button
+          size="sm"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm cursor-pointer"
+          onClick={openAdd}
+        >
+          <Plus className="w-4 h-4 mr-1.5" /> Add documentation
         </Button>
       </div>
 
-      {isLoading && <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-16 bg-slate-800" />)}</div>}
+      {isLoading && (
+        <div className="space-y-2">
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-16 bg-muted" />
+          ))}
+        </div>
+      )}
 
       {!isLoading && docs?.length === 0 && (
-        <div className="text-center py-12 text-slate-400">
-          <BookOpen className="w-10 h-10 mx-auto mb-3 text-slate-600" />
-          <p>No backend documentation yet.</p>
+        <div className="text-center py-14">
+          <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+            <BookOpen className="w-6 h-6 text-muted-foreground" />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            No backend documentation yet.
+          </p>
         </div>
       )}
 
       <div className="space-y-2">
         {docs?.map((doc) => (
-          <div key={doc.id} className="flex items-start gap-3 p-3 rounded-lg bg-slate-800 border border-slate-700">
-            <BookOpen className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+          <div
+            key={doc.id}
+            className="flex items-start gap-3 p-3.5 rounded-xl bg-white border border-border shadow-sm"
+          >
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
+              <BookOpen className="w-4 h-4 text-emerald-600" />
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white">{doc.title}</p>
-              <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 mt-0.5">
-                {doc.url} <ExternalLink className="w-3 h-3" />
+              <p className="text-sm font-medium text-foreground">{doc.title}</p>
+              <a
+                href={doc.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1 mt-0.5"
+              >
+                {doc.url} <ExternalLink className="w-3 h-3 shrink-0" />
               </a>
-              {doc.description && <p className="text-xs text-slate-400 mt-1">{doc.description}</p>}
+              {doc.description && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {doc.description}
+                </p>
+              )}
             </div>
             <div className="flex gap-1">
               <CopyButton value={doc.url} label="URL" />
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-white" onClick={() => openEdit(doc)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                onClick={() => openEdit(doc)}
+              >
                 <Pencil className="w-3.5 h-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-300" onClick={() => setDeleting(doc)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                onClick={() => setDeleting(doc)}
+              >
                 <Trash2 className="w-3.5 h-3.5" />
               </Button>
             </div>
@@ -125,53 +193,70 @@ export function BackendDocsTab({ projectId }: Readonly<Props>) {
       </div>
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="bg-slate-800 border-slate-700 text-white">
+        <DialogContent showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit documentation" : "Add documentation"}</DialogTitle>
+            <DialogTitle>
+              {editing ? "Edit documentation" : "Add documentation"}
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(d => saveMutation.mutate(d))} className="space-y-4">
-            <div className="space-y-1">
-              <Label className="text-slate-300">Title *</Label>
-              <Input className="bg-slate-700 border-slate-600 text-white" placeholder="Postman" {...register("title")} />
-              {errors.title && <p className="text-xs text-red-400">{errors.title.message}</p>}
+          <form
+            onSubmit={handleSubmit((d) => saveMutation.mutate(d))}
+            className="space-y-4"
+          >
+            <div className="space-y-1.5">
+              <Label>Title *</Label>
+              <Input placeholder="Postman" {...register("title")} />
+              {errors.title && (
+                <p className="text-xs text-destructive">
+                  {errors.title.message}
+                </p>
+              )}
             </div>
-            <div className="space-y-1">
-              <Label className="text-slate-300">URL *</Label>
-              <Input className="bg-slate-700 border-slate-600 text-white" placeholder="https://..." {...register("url")} />
-              {errors.url && <p className="text-xs text-red-400">{errors.url.message}</p>}
+            <div className="space-y-1.5">
+              <Label>URL *</Label>
+              <Input placeholder="https://..." {...register("url")} />
+              {errors.url && (
+                <p className="text-xs text-destructive">{errors.url.message}</p>
+              )}
             </div>
-            <div className="space-y-1">
-              <Label className="text-slate-300">Description</Label>
-              <Textarea className="bg-slate-700 border-slate-600 text-white resize-none" rows={2} {...register("description")} />
+            <div className="space-y-1.5">
+              <Label>Description</Label>
+              <Textarea
+                className="resize-none"
+                rows={2}
+                {...register("description")}
+              />
             </div>
             <DialogFooter>
-              <Button variant="ghost" type="button" onClick={() => setFormOpen(false)} className="text-slate-400">Cancel</Button>
-              <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? "Saving…" : editing ? "Save changes" : "Add"}
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => setFormOpen(false)}
+                className="cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
+                disabled={saveMutation.isPending}
+              >
+                {submitLabel}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {deleting && (
-        <AlertDialog open={!!deleting} onOpenChange={() => setDeleting(null)}>
-          <AlertDialogContent className="bg-slate-800 border-slate-700 text-white">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete documentation?</AlertDialogTitle>
-              <AlertDialogDescription className="text-slate-400">
-                Delete <strong className="text-white">{deleting.title}</strong>?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white">Cancel</AlertDialogCancel>
-              <Button variant="destructive" onClick={() => deleteMutation.mutate(deleting.id)} disabled={deleteMutation.isPending}>
-                {deleteMutation.isPending ? "Deleting…" : "Delete"}
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
+      <ConfirmDeleteDialog
+        open={!!deleting}
+        onOpenChange={(open) => { if (!open) setDeleting(null); }}
+        title="Delete documentation?"
+        description={<>Delete <strong>{deleting?.title}</strong>?</>}
+        onConfirm={() => deleteMutation.mutate(deleting!.id)}
+        isPending={deleteMutation.isPending}
+        confirmLabel="Delete documentation"
+      />
     </div>
   );
 }
